@@ -1,0 +1,48 @@
+start_watering:
+  name: Start watering
+  description: Start watering for one or more Gardena AquaPrecise BLE devices.
+  fields:
+    seconds:
+      name: Duration
+      description: Watering duration in seconds. If omitted, each device uses its configured default duration.
+      required: false
+      example: 600
+      selector:
+        number:
+          min: 1
+          max: 86400
+          step: 1
+          mode: box
+    entry_id:
+      name: Config entry
+      description: Target a specific config entry ID.
+      required: false
+      example: 01JABCDEF23456789XYZ123456
+      selector:
+        text:
+    entity_id:
+      name: Entity
+      description: Target one or more entities from this integration.
+      required: false
+      selector:
+        entity:
+          integration: gardena_aquaprecise_ble
+
+stop_watering:
+  name: Stop watering
+  description: Stop watering for one or more Gardena AquaPrecise BLE devices.
+  fields:
+    entry_id:
+      name: Config entry
+      description: Target a specific config entry ID.
+      required: false
+      example: 01JABCDEF23456789XYZ123456
+      selector:
+        text:
+    entity_id:
+      name: Entity
+      description: Target one or more entities from this integration.
+      required: false
+      selector:
+        entity:
+          integration: gardena_aquaprecise_ble
