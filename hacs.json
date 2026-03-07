@@ -2,9 +2,5 @@
   "name": "Gardena AquaPrecise BLE",
   "content_in_root": false,
   "render_readme": true,
-  "domains": [
-    "gardena_aquaprecise_ble"
-  ],
-  "iot_class": "Local Push",
   "homeassistant": ">=2024.8.0"
 }
