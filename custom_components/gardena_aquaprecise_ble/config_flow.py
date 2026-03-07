@@ -11,13 +11,17 @@ from homeassistant import config_entries
 from homeassistant.components import bluetooth
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import selector
 
 from .ble import AquaPreciseBleDevice, AquaPrecisePairingError
 from .const import (
+    CONF_DURATION_MINUTES,
     CONF_DURATION_SECONDS,
     CONF_PAIRED,
-    DEFAULT_DURATION_SECONDS,
+    DEFAULT_DURATION_MINUTES,
+    MAX_DURATION_MINUTES,
+    MIN_DURATION_MINUTES,
     DOMAIN,
     GARDENA_MANUFACTURER_ID,
     SERVICE_UUID_MATCH,
@@ -46,6 +50,13 @@ class GardenaAquapreciseFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Gardena AquaPrecise BLE."""
 
     VERSION = 1
+
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
+        """Get options flow for this handler."""
+        return GardenaAquapreciseOptionsFlowHandler(config_entry)
 
     def __init__(self) -> None:
         self._candidates: dict[str, DiscoveryCandidate] = {}
@@ -145,7 +156,6 @@ class GardenaAquapreciseFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 data={
                     CONF_ADDRESS: self._selected_address,
                     CONF_NAME: self._selected_name or "AquaPrecise",
-                    CONF_DURATION_SECONDS: DEFAULT_DURATION_SECONDS,
                     CONF_PAIRED: True,
                 },
             )
@@ -205,3 +215,53 @@ def _score_candidate(service_info: BluetoothServiceInfoBleak) -> int:
         score += 2
 
     return score
+
+
+class GardenaAquapreciseOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle options flow for default watering duration."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self._config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, int] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Manage integration options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        legacy_seconds = int(
+            self._config_entry.options.get(
+                CONF_DURATION_SECONDS,
+                self._config_entry.data.get(
+                    CONF_DURATION_SECONDS,
+                    DEFAULT_DURATION_MINUTES * 60,
+                ),
+            )
+        )
+        fallback_minutes = max(1, (legacy_seconds + 59) // 60)
+
+        current_duration_minutes = max(
+            MIN_DURATION_MINUTES,
+            min(
+                MAX_DURATION_MINUTES,
+                int(
+                    self._config_entry.options.get(
+                        CONF_DURATION_MINUTES,
+                        fallback_minutes,
+                    )
+                ),
+            ),
+        )
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_DURATION_MINUTES, default=current_duration_minutes): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_DURATION_MINUTES, max=MAX_DURATION_MINUTES),
+                    cv.positive_int,
+                )
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=data_schema)

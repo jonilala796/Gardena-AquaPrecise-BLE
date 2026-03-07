@@ -18,10 +18,11 @@ HACS-ready custom integration with domain `gardena_aquaprecise_ble` to control G
   - power write (`01`/`00`)
 - Entities:
   - `switch.aquaprecise_watering`
-  - `number.aquaprecise_duration_seconds`
   - optional `sensor.aquaprecise_battery`
+- Integration options:
+  - default watering duration in minutes
 - Services:
-  - `gardena_aquaprecise_ble.start_watering` (with `seconds`)
+  - `gardena_aquaprecise_ble.start_watering` (with `minutes`)
   - `gardena_aquaprecise_ble.stop_watering`
 
 ## Discovery
@@ -66,7 +67,7 @@ Stop:
 ```yaml
 service: gardena_aquaprecise_ble.start_watering
 data:
-  seconds: 120
+  minutes: 2
 ```
 
 ```yaml

@@ -2,9 +2,20 @@ start_watering:
   name: Start watering
   description: Start watering for one or more Gardena AquaPrecise BLE devices.
   fields:
-    seconds:
+    minutes:
       name: Duration
-      description: Watering duration in seconds. If omitted, each device uses its configured default duration.
+      description: Watering duration in minutes. If omitted, each device uses its configured default duration.
+      required: false
+      example: 10
+      selector:
+        number:
+          min: 1
+          max: 120
+          step: 1
+          mode: box
+    seconds:
+      name: Legacy duration (seconds)
+      description: Legacy field for backward compatibility. Prefer minutes.
       required: false
       example: 600
       selector:

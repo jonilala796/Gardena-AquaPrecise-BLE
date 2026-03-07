@@ -20,5 +20,15 @@
     "abort": {
       "no_devices_found": "No AquaPrecise BLE candidates found"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Watering defaults",
+        "data": {
+          "duration_minutes": "Default watering duration (minutes)"
+        }
+      }
+    }
   }
 }

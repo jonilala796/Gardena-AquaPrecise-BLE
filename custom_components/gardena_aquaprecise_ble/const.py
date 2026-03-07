@@ -4,17 +4,18 @@ from __future__ import annotations
 
 DOMAIN = "gardena_aquaprecise_ble"
 
-PLATFORMS = ["switch", "number", "sensor"]
+PLATFORMS = ["switch", "sensor"]
 
 CONF_ADDRESS = "address"
 CONF_NAME = "name"
 CONF_PAIRED = "paired"
+CONF_DURATION_MINUTES = "duration_minutes"
 CONF_DURATION_SECONDS = "duration_seconds"
 
-DEFAULT_DURATION_SECONDS = 60
-MIN_DURATION_SECONDS = 10
-MAX_DURATION_SECONDS = 7200
-DURATION_STEP_SECONDS = 10
+DEFAULT_DURATION_MINUTES = 1
+MIN_DURATION_MINUTES = 1
+MAX_DURATION_MINUTES = 120
+DURATION_STEP_MINUTES = 1
 
 SERVICE_START_WATERING = "start_watering"
 SERVICE_STOP_WATERING = "stop_watering"

@@ -21,11 +21,14 @@ from homeassistant.helpers import entity_registry as er
 from .ble import AquaPreciseBleDevice, AquaPrecisePairingError
 from .const import (
     CONF_ADDRESS,
+    CONF_DURATION_MINUTES,
     CONF_DURATION_SECONDS,
     CONF_NAME,
     CONF_PAIRED,
-    DEFAULT_DURATION_SECONDS,
+    DEFAULT_DURATION_MINUTES,
     DOMAIN,
+    MAX_DURATION_MINUTES,
+    MIN_DURATION_MINUTES,
     PLATFORMS,
     SERVICE_START_WATERING,
     SERVICE_STOP_WATERING,
@@ -218,10 +221,16 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
     async def _service_start(call: ServiceCall) -> None:
         runtimes = await _resolve_runtime(call)
+        minutes = call.data.get("minutes")
         seconds = call.data.get("seconds")
 
         for runtime in runtimes:
-            desired = int(seconds) if seconds is not None else runtime.duration_seconds
+            if minutes is not None:
+                desired = int(minutes) * 60
+            elif seconds is not None:
+                desired = int(seconds)
+            else:
+                desired = runtime.duration_seconds
             await runtime.async_start_watering(desired)
 
     async def _service_stop(call: ServiceCall) -> None:
@@ -235,6 +244,10 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         _service_start,
         schema=vol.Schema(
             {
+                vol.Optional("minutes"): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_DURATION_MINUTES, max=MAX_DURATION_MINUTES),
+                ),
                 vol.Optional("seconds"): vol.Coerce(int),
                 vol.Optional("entry_id"): str,
                 vol.Optional(ATTR_ENTITY_ID): vol.Any(str, [str]),
@@ -259,6 +272,42 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: AquaPreciseConfigEntry) -> bool:
     """Set up Gardena AquaPrecise BLE from a config entry."""
     hass.data.setdefault(DOMAIN, {})
+
+    if (
+        CONF_DURATION_MINUTES not in entry.options
+        and CONF_DURATION_SECONDS in entry.options
+    ):
+        hass.config_entries.async_update_entry(
+            entry,
+            options={
+                **entry.options,
+                CONF_DURATION_MINUTES: max(
+                    MIN_DURATION_MINUTES,
+                    min(
+                        MAX_DURATION_MINUTES,
+                        (int(entry.options[CONF_DURATION_SECONDS]) + 59) // 60,
+                    ),
+                ),
+            },
+        )
+
+    if (
+        CONF_DURATION_MINUTES not in entry.options
+        and CONF_DURATION_SECONDS in entry.data
+    ):
+        hass.config_entries.async_update_entry(
+            entry,
+            options={
+                **entry.options,
+                CONF_DURATION_MINUTES: max(
+                    MIN_DURATION_MINUTES,
+                    min(
+                        MAX_DURATION_MINUTES,
+                        (int(entry.data[CONF_DURATION_SECONDS]) + 59) // 60,
+                    ),
+                ),
+            },
+        )
 
     if bluetooth.async_scanner_count(hass, connectable=True) == 0:
         raise ConfigEntryNotReady(
@@ -291,12 +340,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: AquaPreciseConfigEntry) 
                 data={**entry.data, CONF_PAIRED: True},
             )
 
+    legacy_seconds = int(
+        entry.options.get(
+            CONF_DURATION_SECONDS,
+            entry.data.get(CONF_DURATION_SECONDS, DEFAULT_DURATION_MINUTES * 60),
+        )
+    )
+    fallback_minutes = max(1, (legacy_seconds + 59) // 60)
+    duration_minutes = max(
+        MIN_DURATION_MINUTES,
+        min(
+            MAX_DURATION_MINUTES,
+            int(entry.options.get(CONF_DURATION_MINUTES, fallback_minutes)),
+        ),
+    )
+
     runtime = AquaPreciseRuntime(
         ble_device=ble_device,
-        duration_seconds=int(entry.data.get(CONF_DURATION_SECONDS, DEFAULT_DURATION_SECONDS)),
+        duration_seconds=duration_minutes * 60,
     )
 
     hass.data[DOMAIN][entry.entry_id] = runtime
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await runtime.async_start_notifications()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
@@ -317,3 +382,8 @@ async def async_remove_entry(hass: HomeAssistant, entry: AquaPreciseConfigEntry)
     address = entry.data.get(CONF_ADDRESS)
     if address:
         bluetooth.async_rediscover_address(hass, address)
+
+
+async def _async_update_listener(hass: HomeAssistant, entry: AquaPreciseConfigEntry) -> None:
+    """Reload config entry when options are updated."""
+    await hass.config_entries.async_reload(entry.entry_id)
