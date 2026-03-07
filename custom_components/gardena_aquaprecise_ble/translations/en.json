@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Select AquaPrecise device",
-        "description": "Select a discovered AquaPrecise BLE candidate.",
+        "description": "Select a discovered AquaPrecise BLE candidate. Before continuing, put the device into pairing mode (press button until LED blinks) and disconnect the phone app.",
         "data": {
           "address": "Device"
         }
