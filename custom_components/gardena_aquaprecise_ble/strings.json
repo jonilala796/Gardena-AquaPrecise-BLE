@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select AquaPrecise device",
+        "description": "Select a discovered AquaPrecise BLE candidate.",
+        "data": {
+          "address": "Device"
+        }
+      },
+      "pair": {
+        "title": "Pair AquaPrecise",
+        "description": "Put {device} into pairing mode (press button until LED blinks), disconnect the phone app, then submit to retry."
+      }
+    },
+    "error": {
+      "pairing_failed": "Pairing failed. Ensure pairing mode is active and the mobile app is disconnected.",
+      "not_connectable": "Device is currently not reachable through a connectable Bluetooth adapter/proxy."
+    },
+    "abort": {
+      "no_devices_found": "No AquaPrecise BLE candidates found"
+    }
+  }
+}
