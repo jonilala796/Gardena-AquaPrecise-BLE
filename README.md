@@ -1,3 +1,6 @@
+# This is archived in favor of
+# https://www.home-assistant.io/integrations/gardena_bluetooth
+
 # Gardena AquaPrecise BLE (Home Assistant Custom Integration)
 
 HACS-ready custom integration with domain `gardena_aquaprecise_ble` to control Gardena AquaPrecise via Bluetooth LE.
